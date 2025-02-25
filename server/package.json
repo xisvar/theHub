@@ -1,0 +1,29 @@
+{
+  "name": "thehub-server",
+  "version": "1.0.0",
+  "description": "First Server To TheHub",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "start": "nodemon server.js"
+  },
+  "keywords": [
+    "TheHub"
+  ],
+  "author": "Omajuwa Jalla",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "nodemon": "^3.1.9"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "eslint": "^9.21.0",
+    "globals": "^16.0.0"
+  }
+}
