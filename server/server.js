@@ -25,6 +25,9 @@ import bodyParser from "body-parser"; // Middleware to parse JSON and URL-encode
 import { PORT } from "./env.js"; // Import server port from environment configuration
 import setupCluster from "./cluster.js"; // Import function to set up Node.js clustering for better performance
 import routesDispatcher from "./routes/dispatcher.routes.js"; // Import route configuration function
+import corsMiddleware from "./middlewares/cors.middlewares.js";
+
+
 
 /**
  * Express application instance
@@ -46,6 +49,9 @@ let server = express();
  * 4. Route dispatching
  * 5. Error handling (must be last)
  */
+
+// Apply CORS middleware
+server.use(corsMiddleware());
 
 // Parse JSON request bodies (express built-in middleware)
 // This handles Content-Type: application/json requests
