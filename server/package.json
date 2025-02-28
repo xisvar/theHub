@@ -1,0 +1,38 @@
+{
+  "name": "thehub-server",
+  "version": "1.0.0",
+  "description": "First Server To TheHub",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "TheHub"
+  ],
+  "author": "Omajuwa Jalla",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
+    "jsdoc": "^4.0.4",
+    "mongoose": "^8.11.0",
+    "nodemon": "^3.1.9",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^24.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "better-docs": "^2.7.3",
+    "eslint": "^9.21.0",
+    "globals": "^16.0.0",
+    "jsdoc-tsimport-plugin": "^1.0.5"
+  }
+}

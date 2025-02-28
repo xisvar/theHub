@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: server.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: server.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview Server Entry Point for theHub Application
+ *
+ * This module serves as the main entry point for theHub's server application.
+ * It configures the Express server with necessary middleware, sets up routes,
+ * error handling, and initializes the clustering system for improved performance.
+ *
+ * The server uses a modular architecture with separate routes, controllers, and
+ * middleware components to maintain clean separation of concerns.
+ *
+ * @module server
+ * @requires express
+ * @requires cookie-parser
+ * @requires body-parser
+ * @requires ./env
+ * @requires ./cluster
+ * @requires ./routes/dispatcher.routes
+ * @requires ./middlewares/error.middlewares
+ */
+
+// Import necessary NPM modules and dependencies
+import express from "express"; // Express.js framework for building the web server
+import cookieParser from "cookie-parser"; // Middleware to parse cookies from requests
+import bodyParser from "body-parser"; // Middleware to parse JSON and URL-encoded bodies
+import { PORT } from "./env.js"; // Import server port from environment configuration
+import setupCluster from "./cluster.js"; // Import function to set up Node.js clustering for better performance
+import routesDispatcher from "./routes/dispatcher.routes.js"; // Import route configuration function
+
+/**
+ * Express application instance
+ * This creates the primary server instance that will handle all HTTP requests
+ * @type {import('express').Application}
+ */
+let server = express();
+
+// Configure and attach middleware to process requests
+// The order of middleware is important as they execute sequentially
+
+/**
+ * Middleware Configuration
+ *
+ * The following middleware stack processes incoming requests in sequence:
+ * 1. JSON body parsing for API requests
+ * 2. URL-encoded form data parsing
+ * 3. Cookie parsing
+ * 4. Route dispatching
+ * 5. Error handling (must be last)
+ */
+
+// Parse JSON request bodies (express built-in middleware)
+// This handles Content-Type: application/json requests
+server.use(express.json());
+
+// Parse JSON request bodies (body-parser middleware)
+// This is technically redundant with express.json() in modern Express versions
+// Could be removed as express.json() now uses body-parser internally
+server.use(bodyParser.json());
+
+// Parse URL-encoded request bodies (express built-in middleware)
+// This handles form submissions (Content-Type: application/x-www-form-urlencoded)
+// extended: false means the values can be string or array only
+server.use(express.urlencoded({ extended: false }));
+
+// Parse cookies from request headers
+// Makes cookies available in req.cookies object for route handlers
+server.use(cookieParser());
+
+// Register all application routes via the route dispatcher
+// This adds all API endpoints to the server, organized by feature area
+routesDispatcher(server);
+
+// Import and add error handling middleware
+// This must come AFTER all routes are registered to catch errors from them
+import errorHandler from "./middlewares/error.middlewares.js";
+server.use(errorHandler);
+
+/**
+ * Server Initialization
+ *
+ * Set up server clustering for performance optimization.
+ * This distributes incoming connections among multiple worker processes.
+ * Each worker runs on a separate CPU core for better performance and reliability.
+ *
+ * When setupCluster is called, it will either:
+ * 1. Create worker processes if this is the master process, or
+ * 2. Start the Express server listening on the specified port if this is a worker
+ */
+setupCluster(server, PORT);
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-UserModel.html">UserModel</a></li><li><a href="module-adjectives.html">adjectives</a></li><li><a href="module-authControllers.html">authControllers</a></li><li><a href="module-authRoutes.html">authRoutes</a></li><li><a href="module-cluster.html">cluster</a></li><li><a href="module-dispatcherRoutes.html">dispatcherRoutes</a></li><li><a href="module-env.html">env</a></li><li><a href="module-errorMiddleware.html">errorMiddleware</a></li><li><a href="module-jsdocGenerator.html">jsdocGenerator</a></li><li><a href="module-nameBanks.html">nameBanks</a></li><li><a href="module-nameGenerator.html">nameGenerator</a></li><li><a href="module-nouns.html">nouns</a></li><li><a href="module-server.html">server</a></li><li><a href="module-userControllers.html">userControllers</a></li><li><a href="module-userRoutes.html">userRoutes</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-authControllers-authModes.html">authModes</a></li><li><a href="module-userControllers-userModes.html">userModes</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Feb 28 2025 12:52:38 GMT-0600 (Central Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: cluster.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: cluster.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview Cluster Configuration Module for theHub server
+ *
+ * This module implements Node.js clustering to distribute the server workload
+ * across multiple CPU cores, improving performance and reliability.
+ * It handles worker process management, fault tolerance, and graceful shutdown.
+ *
+ * @module cluster
+ * @requires cluster
+ * @requires os
+ */
+
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
+
+import cluster from "cluster";
+import os from "os";
+
+/**
+ * Sets up a clustered server environment with multiple worker processes.
+ * The function creates worker processes based on available CPU cores and
+ * handles process lifecycle management including fault tolerance and graceful shutdowns.
+ *
+ * @function setupCluster
+ * @param {import('express').Application} app - The Express application instance
+ * @param {number} PORT - The port number to listen on
+ * @param {Object} [options={}] - Optional configuration parameters
+ * @param {number} [options.workers=os.cpus().length] - Number of workers to spawn (defaults to CPU count)
+ * @param {boolean} [options.enableRestart=true] - Whether to restart dead workers automatically
+ * @returns {void}
+ *
+ * @example
+ * // Basic usage with default options
+ * import express from 'express';
+ * import setupCluster from './cluster.js';
+ *
+ * const app = express();
+ * const PORT = 3000;
+ *
+ * setupCluster(app, PORT);
+ *
+ * @example
+ * // Advanced usage with custom options
+ * setupCluster(app, PORT, {
+ *   workers: 4,             // Use exactly 4 worker processes
+ *   enableRestart: false    // Don't restart workers when they die
+ * });
+ */
+function setupCluster(app, PORT, options = {}) {
+  const { workers = os.cpus().length, enableRestart = true } = options;
+
+  if (cluster.isPrimary) {
+    console.log(`[CLUSTER] Primary process ${process.pid} is starting...`);
+    console.log(
+      `[CLUSTER] Launching ${workers} workers on ${os.cpus().length} available CPUs`
+    );
+
+    // Fork worker processes
+    for (let i = 0; i &lt; workers; i++) {
+      cluster.fork();
+    }
+
+    // Handle worker exit and optionally restart them
+    cluster.on("exit", (worker, code, signal) => {
+      const exitType = signal ? `signal ${signal}` : `code ${code}`;
+      console.log(
+        `[CLUSTER] Worker ${worker.process.pid} died with ${exitType}`
+      );
+
+      // Restart dead workers unless they exited with a success code or restart is disabled
+      if (enableRestart &amp;&amp; code !== 0) {
+        console.log("[CLUSTER] Spawning replacement worker");
+        cluster.fork();
+      }
+    });
+
+    // Handle various termination signals for graceful shutdown
+    ["SIGINT", "SIGTERM", "SIGQUIT"].forEach((signal) => {
+      process.on(signal, () => {
+        console.log(
+          `[CLUSTER] Primary received ${signal}, shutting down all workers...`
+        );
+
+        // Gracefully terminate all workers
+        Object.values(cluster.workers).forEach((worker) => {
+          worker.send("shutdown");
+
+          // Force kill after timeout if worker doesn't exit cleanly
+          setTimeout(() => {
+            if (!worker.isDead()) {
+              console.log(
+                `[CLUSTER] Force killing worker ${worker.process.pid}`
+              );
+              worker.process.kill("SIGKILL");
+            }
+          }, 5000);
+        });
+
+        // Exit primary process after all workers are done
+        process.exit(0);
+      });
+    });
+  } else {
+    // Worker process code
+    const server = app.listen(PORT, () => {
+      console.log(
+        `[WORKER] Process ${process.pid} started and listening on port ${PORT}`
+      );
+    });
+
+    // Handle graceful shutdown request from primary
+    process.on("message", (msg) => {
+      if (msg === "shutdown") {
+        console.log(
+          `[WORKER] Worker ${process.pid} closing connections and shutting down`
+        );
+
+        // Close server and exit gracefully
+        server.close(() => {
+          console.log(`[WORKER] Worker ${process.pid} exited cleanly`);
+          process.exit(0);
+        });
+
+        // Force exit if server.close takes too long
+        setTimeout(() => {
+          console.log(
+            `[WORKER] Worker ${process.pid} forcing exit after timeout`
+          );
+          process.exit(1);
+        }, 4000);
+      }
+    });
+  }
+}
+
+export default setupCluster;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-UserModel.html">UserModel</a></li><li><a href="module-adjectives.html">adjectives</a></li><li><a href="module-authControllers.html">authControllers</a></li><li><a href="module-authRoutes.html">authRoutes</a></li><li><a href="module-cluster.html">cluster</a></li><li><a href="module-dispatcherRoutes.html">dispatcherRoutes</a></li><li><a href="module-env.html">env</a></li><li><a href="module-errorMiddleware.html">errorMiddleware</a></li><li><a href="module-jsdocGenerator.html">jsdocGenerator</a></li><li><a href="module-nameBanks.html">nameBanks</a></li><li><a href="module-nameGenerator.html">nameGenerator</a></li><li><a href="module-nouns.html">nouns</a></li><li><a href="module-server.html">server</a></li><li><a href="module-userControllers.html">userControllers</a></li><li><a href="module-userRoutes.html">userRoutes</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-authControllers-authModes.html">authModes</a></li><li><a href="module-userControllers-userModes.html">userModes</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Feb 28 2025 12:52:38 GMT-0600 (Central Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+{
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "source": {
+    "include": ["./"],
+    "exclude": ["node_modules", "public"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "plugins": ["plugins/markdown", "node_modules/jsdoc-tsimport-plugin"],
+  "opts": {
+    "template": "node_modules/jsdoc/templates/default",
+    "destination": "./utils/out",
+    "recurse": true,
+    "verbose": true,
+    "readme": "./README.md"
+  },
+  "templates": {
+    "better-docs": {
+      "name": "theHub API Documentation",
+      "title": "theHub Documentation",
+      "css": "style.css",
+      "hideGenerator": false,
+      "navLinks": [
+        {
+          "label": "GitHub",
+          "href": "https://github.com/xisvar/theHub"
+        },
+        {
+          "label": "API Documentation",
+          "href": "index.html"
+        }
+      ]
+    },
+    "cleverLinks": false,
+    "monospaceLinks": false
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true,
+    "idInHeadings": true
+  },
+  "docdash": {
+    "static": false,
+    "sort": true,
+    "sectionOrder": [
+      "Classes",
+      "Modules",
+      "Externals",
+      "Events",
+      "Namespaces",
+      "Mixins",
+      "Tutorials",
+      "Interfaces",
+      "Global"
+    ],
+    "search": true,
+    "collapse": true,
+    "typedefs": true,
+    "navLevel": 3,
+    "private": true,
+    "removeQuotes": "none",
+    "scripts": [],
+    "menu": {
+      "Project Website": {
+        "href": "https://yourwebsite.com",
+        "target": "_blank",
+        "class": "menu-item",
+        "id": "website_link"
+      }
+    }
+  }
+}

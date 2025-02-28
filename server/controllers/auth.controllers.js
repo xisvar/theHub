@@ -1,0 +1,305 @@
+/**
+ * @fileoverview Authentication Controller Module for theHub API
+ *
+ * This module implements authentication-related business logic including user registration,
+ * login with email/password, Google OAuth integration, and session management.
+ * It provides controller functions that are used by the auth routes to process
+ * authentication requests and generate appropriate responses.
+ *
+ * @module authControllers
+ * @requires google-auth-library
+ * @requires ../models/user.models
+ * @requires ../env
+ * @requires bcryptjs
+ * @requires jsonwebtoken
+ */
+
+/* eslint-disable no-unused-vars */
+// Import the Google OAuth2 client for handling Google authentication
+import { OAuth2Client } from "google-auth-library";
+// Import the User model to interact with the user collection in MongoDB
+import User from "../models/user.models.js";
+// Import Google client ID from environment variables
+import { GOOGLE_CLIENT_ID } from "../env.js";
+// Import bcrypt for password hashing and comparison
+import bcrypt from "bcryptjs";
+// Import JWT for generating authentication tokens
+import jwt from "jsonwebtoken";
+// Import JWT configuration from environment variables
+import { JWT_EXPIRES_IN, JWT_SECRET } from "../env.js";
+
+/**
+ * Collection of authentication controller functions
+ * @namespace authModes
+ */
+const authModes = {
+  /**
+   * Handles user registration with email and password
+   * Creates a new user account, hashes the password, and generates a JWT token
+   *
+   * @function signUp
+   * @memberof authModes
+   * @param {import('express').Request} req - Express request object containing user registration data in body
+   * @param {import('express').Response} res - Express response object to send registration result
+   * @param {import('express').NextFunction} next - Express next middleware function for error handling
+   * @returns {void}
+   */
+  "sign-up": async (req, res, next) => {
+    try {
+      // Extract email and password from request body
+      const { email, password } = req.body;
+
+      // Validate that both email and password are provided
+      if (!email || !password) {
+        let error = new Error("Email & Password cannot be null");
+        error.status = 400; // Set HTTP status code to 400 (Bad Request)
+        throw error; // Throw error to be caught in catch block
+      }
+
+      // Check if a user with this email already exists in the database
+      let userExists = await User.findOne({ email });
+
+      // If user exists and they registered with email/password
+      if (userExists & !userExists.isGoogleUser) {
+        // Return conflict error since user already exists with email/password
+        let error = new Error("This user already exists");
+        error.status = 409; // Set HTTP status code to 409 (Conflict)
+        throw error;
+      } else if (userExists & userExists.isGoogleUser) {
+        // If user exists but they registered with Google
+        let error = new Error(
+          "User already exists & signed up with a google account."
+        );
+        error.status = 400; // Set HTTP status code to 400 (Bad Request)
+        throw error;
+      }
+
+      // Generate salt for password hashing (higher number = more secure but slower)
+      const salt = await bcrypt.genSalt(10);
+      // Hash the password with the generated salt
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Create a new user in the database with email and hashed password
+      let user = await User.create({
+        email,
+        password: hashedPassword,
+      });
+
+      // Generate a JWT token for authentication
+      const token = jwt.sign(
+        {
+          userID: user._id, // Include user ID in token payload
+        },
+        JWT_SECRET, // Use secret key from environment variables
+        { expiresIn: JWT_EXPIRES_IN } // Set token expiration time
+      );
+
+      // Send success response with status 201 (Created) and user data
+      res.status(201).json({
+        success: true,
+        data: {
+          token, // Include authentication token
+          user: {
+            // Include necessary user information (excluding sensitive data)
+            rank: user.rank,
+            username: user.username,
+            skills: user.skills,
+            r_p: user.RP,
+            isGoogleUser: user.isGoogleUser,
+          },
+        },
+      });
+    } catch (error) {
+      // Pass any errors to the error handling middleware
+      next(error);
+    }
+  },
+
+  /**
+   * Handles user authentication with email and password
+   * Validates credentials, generates a JWT token upon successful authentication
+   *
+   * @function signIn
+   * @memberof authModes
+   * @param {import('express').Request} req - Express request object containing login credentials in body
+   * @param {import('express').Response} res - Express response object to send authentication result
+   * @param {import('express').NextFunction} next - Express next middleware function for error handling
+   * @returns {void}
+   */
+  "sign-in": async (req, res, next) => {
+    try {
+      // Extract email and password from request body
+      const { email, password } = req.body;
+
+      // Validate that both email and password are provided
+      if (!email || !password) {
+        let error = new Error("Email and password are required");
+        error.status = 400; // Set HTTP status code to 400 (Bad Request)
+        throw error;
+      }
+
+      // Find user with the provided email in the database
+      let probableUser = await User.findOne({ email });
+
+      // If no user found, return authentication error
+      if (!probableUser) {
+        let error = new Error("Invalid credentials");
+        error.status = 401; // Set HTTP status code to 401 (Unauthorized)
+        throw error;
+      }
+
+      // Compare provided password with stored hashed password
+      const isPasswordValid = await bcrypt.compare(
+        password,
+        probableUser.password
+      );
+
+      // If password doesn't match, return authentication error
+      if (!isPasswordValid) {
+        let error = new Error("Invalid credentials");
+        error.status = 401; // Set HTTP status code to 401 (Unauthorized)
+        throw error;
+      }
+
+      // Generate JWT token for the authenticated user
+      const token = jwt.sign({ userID: probableUser._id }, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN,
+      });
+
+      // Send success response with status 200 (OK) and user data
+      res.status(200).json({
+        success: true,
+        data: {
+          token, // Include authentication token
+          user: {
+            // Include necessary user information (excluding sensitive data)
+            rank: probableUser.rank,
+            username: probableUser.username,
+            skills: probableUser.skills,
+            r_p: probableUser.RP,
+            isGoogleUser: probableUser.isGoogleUser,
+          },
+        },
+      });
+    } catch (error) {
+      // Pass any errors to the error handling middleware
+      next(error);
+    }
+  },
+
+  /**
+   * Handles user logout
+   * Terminates the user session and invalidates authentication tokens
+   *
+   * @function signOut
+   * @memberof authModes
+   * @param {import('express').Request} req - Express request object
+   * @param {import('express').Response} res - Express response object
+   * @param {import('express').NextFunction} next - Express next middleware function
+   * @returns {void}
+   * @todo Implement token invalidation and session termination
+   */
+  "sign-out": async (req, res, next) => {
+    // TODO: Implementation pending
+  },
+
+  /**
+   * Handles Google OAuth authentication
+   * Verifies Google ID token, creates or authenticates user accounts based on Google profile
+   *
+   * @function googleSignUp
+   * @memberof authModes
+   * @param {import('express').Request} req - Express request object containing Google ID token in body
+   * @param {import('express').Response} res - Express response object to send authentication result
+   * @param {import('express').NextFunction} next - Express next middleware function for error handling
+   * @returns {void}
+   */
+  "google-sign-up": async (req, res, next) => {
+    // Extract Google ID token from request body
+    const { idToken } = req.body;
+    // Create OAuth2 client instance using Google Client ID
+    const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+    try {
+      // Validate that ID token is provided
+      if (!idToken) {
+        let error = new Error("Google Id Token Is null");
+        error.status = 400; // Set HTTP status code to 400 (Bad Request)
+        throw error;
+      }
+
+      // Verify the Google ID token authenticity
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: GOOGLE_CLIENT_ID, // Specify allowed client ID
+      });
+
+      // Extract user information from the verified token
+      const payload = ticket.getPayload();
+
+      // If verification failed and no payload was returned
+      if (!payload) {
+        let error = new Error("google authentication error");
+        error.status = 500; // Set HTTP status code to 500 (Internal Server Error)
+        throw error;
+      }
+
+      // Check if a user with this email already exists in the database
+      let user = await User.findOne({ email: payload.email });
+
+      // If user doesn't exist, create a new one with Google account info
+      if (!user) {
+        // Create user with data from Google profile
+        user = await User.create({
+          email: payload.email,
+          profilePicture: payload.picture,
+          isGoogleUser: true, // Flag as Google-authenticated user
+        });
+
+        // Generate JWT token for the new user
+        const token = jwt.sign({ userID: user._id }, JWT_SECRET, {
+          expiresIn: JWT_EXPIRES_IN,
+        });
+
+        // Send success response with status 201 (Created) and user data
+        res.status(201).json({
+          success: true,
+          data: {
+            token, // Include authentication token
+            user: {
+              // Include necessary user information
+              rank: user.rank,
+              username: user.username,
+              skills: user.skills,
+              r_p: user.RP,
+              isGoogleUser: user.isGoogleUser,
+            },
+          },
+        });
+      } else {
+        // User already exists - handle based on their registration method
+        if (user.isGoogleUser) {
+          // User already signed up with Google
+          // TODO: Change this and instead forward the users details to a google-sign-up path.
+          let error = new Error(
+            "User already exists & signed up with a google account."
+          );
+          error.status = 401; // Set HTTP status code to 401 (Unauthorized)
+          throw error;
+        } else {
+          // User exists but signed up with email/password, not Google
+          let error = new Error(
+            "User already exists with a different sign-up method"
+          );
+          error.status = 401; // Set HTTP status code to 401 (Unauthorized)
+          throw error;
+        }
+      }
+    } catch (err) {
+      // Pass any errors to the error handling middleware
+      next(err);
+    }
+  },
+};
+
+export default authModes;
