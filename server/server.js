@@ -12,20 +12,23 @@
  * @requires express
  * @requires cookie-parser
  * @requires body-parser
+ * @requires helmet
  * @requires ./env
  * @requires ./cluster
  * @requires ./routes/dispatcher.routes
  * @requires ./middlewares/error.middlewares
+ * @requires ./databases/mongodb.databases
  */
 
 // Import necessary NPM modules and dependencies
 import express from "express"; // Express.js framework for building the web server
 import cookieParser from "cookie-parser"; // Middleware to parse cookies from requests
 import bodyParser from "body-parser"; // Middleware to parse JSON and URL-encoded bodies
+import helmet from 'helmet'; // Import the helmet security middleware.
 import { PORT } from "./env.js"; // Import server port from environment configuration
 import setupCluster from "./cluster.js"; // Import function to set up Node.js clustering for better performance
 import routesDispatcher from "./routes/dispatcher.routes.js"; // Import route configuration function
-import corsMiddleware from "./middlewares/cors.middlewares.js";
+import corsMiddleware from "./middlewares/cors.middlewares.js"; // Import middleware for CORS
 
 
 
@@ -53,6 +56,9 @@ let server = express();
 // Apply CORS middleware
 server.use(corsMiddleware());
 
+// Apply Helmet security middleware for enhanced security headers
+server.use(helmet());
+
 // Parse JSON request bodies (express built-in middleware)
 // This handles Content-Type: application/json requests
 server.use(express.json());
@@ -70,6 +76,10 @@ server.use(express.urlencoded({ extended: false }));
 // Parse cookies from request headers
 // Makes cookies available in req.cookies object for route handlers
 server.use(cookieParser());
+
+// Use the Arcjet Middleware for rate Limiting and bot detection.
+import arcjetMiddleware from "./middlewares/arcjet.middlewares.js";
+server.use(arcjetMiddleware);
 
 // Register all application routes via the route dispatcher
 // This adds all API endpoints to the server, organized by feature area

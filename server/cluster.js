@@ -8,6 +8,7 @@
  * @module cluster
  * @requires cluster
  * @requires os
+ * @requires ./databases/mongodb.databases
  */
 
 /* eslint-disable no-unused-vars */
@@ -15,6 +16,7 @@
 
 import cluster from "cluster";
 import os from "os";
+import connectToDatabase from "./databases/mongodb.databases.js";
 
 /**
  * Sets up a clustered server environment with multiple worker processes.
@@ -102,10 +104,12 @@ function setupCluster(app, PORT, options = {}) {
     });
   } else {
     // Worker process code
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, async () => {
       console.log(
         `[WORKER] Process ${process.pid} started and listening on port ${PORT}`
       );
+      // Connect to the database
+      await connectToDatabase()
     });
 
     // Handle graceful shutdown request from primary

@@ -34,8 +34,9 @@
 const errorMiddleware = (err, req, res, next) => {
   try {
     let error = {
-      ...err,
+      message: err.message,
       status: err.status || 500,
+      stack: err.stack,
     };
 
     // Log the error to the console.

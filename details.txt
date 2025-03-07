@@ -1,0 +1,6 @@
+{"success":true,"data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI2N2MzNDE0M2EwNzBlY2YzZTFkMDUxZmYiLCJpYXQiOjE3NDA4NDk0NzUsImV4cCI6MTc0MDkzNTg3NX0.SCGWzHHoltqE_MuMD2mv2JS6Mr-Av68fWalWb-7v6GU","user":{"rank":"Novice","username":"TranquilGiant3959","skills":[],"r_p":100,"isGoogleUser":false}}}
+
+{
+    "email": "ojalla@gsumail.gram.edu",
+    "password": "CapitalLetter56"
+}

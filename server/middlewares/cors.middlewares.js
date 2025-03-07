@@ -19,7 +19,7 @@ import {FRONTEND_URL } from "../env.js";
  * @returns {Function} CORS middleware configured for the current environment
  */
 const corsMiddleware = () => {
-  // Define allowed origins based on environment
+  // Define allowed origins.
   const allowedOrigins = [FRONTEND_URL];
 
   // Return configured CORS middleware

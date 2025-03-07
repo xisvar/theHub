@@ -45,6 +45,7 @@ const authModes = {
    * @returns {void}
    */
   "sign-up": async (req, res, next) => {
+    console.log(`Ra-tat-ta`)
     try {
       // Extract email and password from request body
       const { email, password } = req.body;
@@ -59,18 +60,20 @@ const authModes = {
       // Check if a user with this email already exists in the database
       let userExists = await User.findOne({ email });
 
-      // If user exists and they registered with email/password
-      if (userExists & !userExists.isGoogleUser) {
+      // If user exists
+      if (userExists) {
+          if(userExists.isGoogleUser){
+            // If user exists but they registered with Google
+            let error = new Error(
+              "User already exists & signed up with a google account."
+            );
+            error.status = 400; // Set HTTP status code to 400 (Bad Request)
+            throw error;
+          }
+
         // Return conflict error since user already exists with email/password
         let error = new Error("This user already exists");
         error.status = 409; // Set HTTP status code to 409 (Conflict)
-        throw error;
-      } else if (userExists & userExists.isGoogleUser) {
-        // If user exists but they registered with Google
-        let error = new Error(
-          "User already exists & signed up with a google account."
-        );
-        error.status = 400; // Set HTTP status code to 400 (Bad Request)
         throw error;
       }
 

@@ -61,4 +61,8 @@ typings/
 
 
 # next.js build output
-.next
+
+
+# non-essential backend developer things.
+next-steps.md
+details.txt

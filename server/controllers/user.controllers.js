@@ -57,6 +57,30 @@ const userModes = {
   "update user profile": (req, res, next) => {
     // Implementation will update user data and return the updated user profile
   },
+
+  "search users": (req, res, next) => {
+    // Implementation will scan through the userbase for search parameter
+  },
+
+  "get public user profile": (req, res, next) => {
+    // Implementation will get a public user profile.
+  },
+
+  "follow user": (req, res, next) => {
+    // Implementation will add the requesting user to another user's follower list.
+  },
+
+  "unfollow user": (req, res, next) => {
+    // Implementation will remove the requesting user to another user's follower list.
+  },
+
+  "get followers": (req, res, next) => {
+    // Implementation will get all the users followers
+  },
+
+  "get following": (req, res, next) => {
+    // Implementation will get all the users the current user is following.
+  },
 };
 
 export default userModes;
